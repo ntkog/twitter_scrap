@@ -1,4 +1,10 @@
-const puppeteer = require('puppeteer');
+// puppeteer-extra is a drop-in replacement for puppeteer,
+// it augments the installed puppeteer with plugin functionality
+const puppeteer = require('puppeteer-extra')
+
+// add stealth plugin and use defaults (all evasion techniques)
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+puppeteer.use(StealthPlugin());
 const {writeFile} = require('jsonfile');
 
 const TWITTER_USER = process.argv[2] || "congosto";
@@ -36,7 +42,7 @@ async function scrapeInfiniteScrollItems(
 (async () => {
   // Set up browser and page.
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
   const page = await browser.newPage();
