@@ -19,7 +19,7 @@ npm install
 # Run
 
 ```bash
-node index.js @NTKOG 5000
+node index.js NTKOG 5000
 ```
 
 > Once it finishes, it will store the results in **items.json** file
