@@ -1,18 +1,26 @@
 {
-  "name": "twitter_scrap",
+  "name": "node-twitter-scraper",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Scraping twitter with chrome headless and puppeteer",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dansalerno712/Node-Twitter-Scraper.git"
+  },
+  "author": "Dan Salerno",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dansalerno712/Node-Twitter-Scraper/issues"
+  },
+  "homepage": "https://github.com/dansalerno712/Node-Twitter-Scraper#readme",
   "dependencies": {
+    "chunk-date-range": "^0.1.0",
+    "dateformat": "^3.0.3",
     "jsonfile": "^5.0.0",
-    "puppeteer": "^2.0.0",
-    "puppeteer-extra": "^3.1.7",
-    "puppeteer-extra-plugin-stealth": "^2.4.5"
+    "puppeteer": "^2.0.0"
   }
 }

@@ -1,69 +1,78 @@
-// puppeteer-extra is a drop-in replacement for puppeteer,
-// it augments the installed puppeteer with plugin functionality
-const puppeteer = require('puppeteer-extra')
-
-// add stealth plugin and use defaults (all evasion techniques)
-const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-puppeteer.use(StealthPlugin());
+const puppeteer = require('puppeteer');
 const {writeFile} = require('jsonfile');
+const {splitDateRange,autoScroll,extractItems,random,splitJobs} = require('./helpers');
 
-const TWITTER_USER = process.argv[2] || "congosto";
+const [,,TERM,START_DATE,END_DATE,ONLY_FROM] = process.argv;
+const QUERY_SELECTORS = ["input", "#search-query"]
 
-function extractItems() {
-  return [...document.querySelectorAll('.tweet')]
-    .map(el => ({
-      metadata : {...el.dataset},
-      text : el.querySelector('.js-tweet-text-container').textContent.trim()
-    }));
-}
-
-async function wait(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
+async function runJobs (query,onlyFrom,list) {
+  let browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
-}
+  return new Promise(async (resolve,reject) => {
+    let ret = [];
+    let encodedQuery = encodeURI(onlyFrom === "true" ? `from:${query}` : query);
+    let page = await browser.newPage();
+    page.setDefaultNavigationTimeout(0);
+    await page.goto(`https://twitter.com/search?l=&q=${encodedQuery}&src=typd&lang=en`);
+    await page.setViewport({
+        width: 1200,
+        height: 800
+    });
+    await page.waitForNavigation({waitUntil: "domcontentloaded"});
+    let querySelectorIdx = await page.evaluate(arr => {
+      let selectors =arr.map(sel => document.querySelector(sel)).map((el,i) => el !== null ? i : el);
+      return selectors.indexOf(1);
+    }, QUERY_SELECTORS);
+    let QUERY_SELECTOR = QUERY_SELECTORS[querySelectorIdx];
 
-async function scrapeInfiniteScrollItems(
-  page,
-  extractItems,
-  itemTargetCount
-) {
-  var items = [];
-  try {
-    let previousHeight;
-    while (items.length < itemTargetCount) {
-      items = await page.evaluate(extractItems);
-      console.log(items.length);
-      previousHeight = await page.evaluate('document.body.scrollHeight');
-      await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-      await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
-      await wait(Math.random() * (10000 - 3525) + 3525);
+    if (QUERY_SELECTOR !== null) {
+      try {
+        for (let i = 0; i < list.length; i += 1) {
+              await page.evaluate(sel => { document.querySelector(sel).value = "" }, QUERY_SELECTOR);
+              await page.type(QUERY_SELECTOR, `${query} since:${list[i].start} until:${list[i].end}`, {delay: random(75,30)});
+              await page.click('.js-search-action');
+              //await page.waitForNavigation({waitUntil: "networkidle0"});
+              await autoScroll(page,random(2500,1500));
+              let tweets = await page.evaluate(extractItems);
+              ret.push(tweets);
+              console.log(`Fetched : [${tweets.length}] tweets => [${query} since:${list[i].start} until:${list[i].end}]`);
+              //await page.waitFor(random(2000,1000));
+        }
+      } catch(err) {
+        reject(err);
+      }
+    } else {
+      console.log(`Skipped [${list[i].start} - ${list[i].end}] : selectors [${QUERY_SELECTORS.join(",")}] don't work`)
     }
-  } catch(e) { }
-  return items;
+
+    await page.close();
+    resolve([].concat(...ret));
+    await browser.close();
+  }).catch((err) => console.log(err))
+
 }
 
-(async () => {
-  // Set up browser and page.
-  const browser = await puppeteer.launch({
-    headless: false,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-  const page = await browser.newPage();
-  page.setViewport({ width: 1280, height: 926 });
+async function run(query, startDate, endDate, onlyFrom) {
+    //chunk the dates
+    let dateChunks = splitDateRange(startDate, endDate, "day").filter(o => o.start !== o.end);
+    let allJobs = splitJobs(dateChunks);
+    let tweets = await Promise.all(allJobs.map(r => runJobs(query,onlyFrom,r)));
 
-  // Navigate to the demo page.
-  await page.goto(`https://twitter.com/${TWITTER_USER}`);
+    console.log("Finished");
+    return [].concat(...tweets);
+}
 
-  // get Total Numbers of tweets
-  let total_tweets = await page.evaluate(`parseInt(document.querySelector('span[data-count]').dataset.count)`);
+(async (term,startDate,endDate,onlyFrom, segments) => {
+  let tweets = await run(term, startDate, endDate, onlyFrom, /[0-9]/.test(segments) ? parseInt(segments): segments);
+  console.log(`Total tweets fetched [${tweets.length}]`);
+  let filename = `./tweets_${startDate.replace(/\//g, "_")}_${endDate.replace(/\//g, "_")}.json`;
+  try {
+    await writeFile(filename, tweets);
+    console.log(`[${filename}] Written!`);
+  } catch(err) {
+    console.error(err);
+  }
 
-  // Scroll and extract items from the page.
-  const items = await scrapeInfiniteScrollItems(page, extractItems, total_tweets);
-
-  // Save extracted items to a file.
-  writeFile('./items.json', items);
-
-  // Close the browser.
-  await browser.close();
-})();
+})(TERM, START_DATE, END_DATE, ONLY_FROM)
