@@ -5,7 +5,7 @@ This project is based on [Node-Twitter-Scrapper](https://github.com/dansalerno71
 # Warnings
 
 > It's a work in progress. Still not catching all the tweets comparing to my own twitter download [tweets.json], but it's getting
-closer. There is some weird cases to study. On public search yo cannot see
+closer. There is some weird cases to study. On public search... cannot see retweets? That would be an explanation for missing tweets on fetching.
 
 > Try to do the searches in batches of more than days.
 
