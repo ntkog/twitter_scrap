@@ -10,12 +10,15 @@ puppeteer.use(StealthPlugin());
 const {writeFile} = require('jsonfile');
 const {splitDateRange,autoScroll,extractItems,random,splitJobs} = require('./helpers');
 
-const [,,TERM,START_DATE,END_DATE,ONLY_FROM] = process.argv;
-const QUERY_SELECTORS = ["input", "#search-query"]
+const [,,TERM,START_DATE,END_DATE,ONLY_FROM,SPLIT_OPTION] = process.argv;
+const QUERY_SELECTORS = ["input", "#search-query"];
+const LATEST_NAV_SELECTOR = '[data-nav="search_filter_tweets"]';
+const VERTICAL_GAP = 75;
+
 
 async function runJobs (query,onlyFrom,list) {
   let browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
   return new Promise(async (resolve,reject) => {
@@ -30,6 +33,9 @@ async function runJobs (query,onlyFrom,list) {
 
     await page.goto(`https://twitter.com/search?l=&q=${encodedQuery}&src=typd&lang=en`);
 
+    await page.waitFor(LATEST_NAV_SELECTOR);
+   
+    await page.click(LATEST_NAV_SELECTOR);
     try {
       await page.waitForNavigation({waitUntil: "networkidle0"});
     } catch(err) {
@@ -51,7 +57,7 @@ async function runJobs (query,onlyFrom,list) {
                 return document.querySelector('.tweet');
               })
               if(availableTweets !== null) {
-                await autoScroll(page,random(300,100));
+                await autoScroll(page,VERTICAL_GAP,random(300,100));
                 let tweets = await page.evaluate(extractItems, list[i].start);
                 ret.push(tweets);
                 console.log(`Fetched : [${tweets.length}] tweets => [${query} since:${list[i].start} until:${list[i].end}]`);
@@ -75,7 +81,7 @@ async function runJobs (query,onlyFrom,list) {
 
 async function run(query, startDate, endDate, onlyFrom) {
     //chunk the dates
-    let dateChunks = splitDateRange(startDate, endDate, "day").filter(o => o.start !== o.end);
+    let dateChunks = splitDateRange(startDate, endDate, SPLIT_OPTION).filter(o => o.start !== o.end);
     let allJobs = splitJobs(dateChunks);
     let tweets = await Promise.all(allJobs.map(r => runJobs(query,onlyFrom,r)));
 
