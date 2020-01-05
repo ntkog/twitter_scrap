@@ -1,4 +1,12 @@
-const puppeteer = require('puppeteer');
+// puppeteer-extra is a drop-in replacement for puppeteer,
+// it augments the installed puppeteer with plugin functionality
+const puppeteer = require('puppeteer-extra')
+
+// add stealth plugin and use defaults (all evasion techniques)
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+puppeteer.use(StealthPlugin());
+
+
 const {writeFile} = require('jsonfile');
 const {splitDateRange,autoScroll,extractItems,random,splitJobs} = require('./helpers');
 
@@ -14,31 +22,42 @@ async function runJobs (query,onlyFrom,list) {
     let ret = [];
     let encodedQuery = encodeURI(onlyFrom === "true" ? `from:${query}` : query);
     let page = await browser.newPage();
-    page.setDefaultNavigationTimeout(0);
-    await page.goto(`https://twitter.com/search?l=&q=${encodedQuery}&src=typd&lang=en`);
+    page.setDefaultNavigationTimeout(90000);
     await page.setViewport({
         width: 1200,
-        height: 800
+        height: 1000
     });
-    await page.waitForNavigation({waitUntil: "domcontentloaded"});
-    let querySelectorIdx = await page.evaluate(arr => {
-      let selectors =arr.map(sel => document.querySelector(sel)).map((el,i) => el !== null ? i : el);
-      return selectors.indexOf(1);
-    }, QUERY_SELECTORS);
-    let QUERY_SELECTOR = QUERY_SELECTORS[querySelectorIdx];
+
+    await page.goto(`https://twitter.com/search?l=&q=${encodedQuery}&src=typd&lang=en`);
+
+    try {
+      await page.waitForNavigation({waitUntil: "networkidle0"});
+    } catch(err) {
+      console.log(`Navigation Timeout!`);
+      console.error(err);
+    }
+
+    let QUERY_SELECTOR = QUERY_SELECTORS[1];
 
     if (QUERY_SELECTOR !== null) {
       try {
         for (let i = 0; i < list.length; i += 1) {
+              await page.focus(QUERY_SELECTOR);
               await page.evaluate(sel => { document.querySelector(sel).value = "" }, QUERY_SELECTOR);
               await page.type(QUERY_SELECTOR, `${query} since:${list[i].start} until:${list[i].end}`, {delay: random(75,30)});
               await page.click('.js-search-action');
-              //await page.waitForNavigation({waitUntil: "networkidle0"});
-              await autoScroll(page,random(2500,1500));
-              let tweets = await page.evaluate(extractItems);
-              ret.push(tweets);
-              console.log(`Fetched : [${tweets.length}] tweets => [${query} since:${list[i].start} until:${list[i].end}]`);
-              //await page.waitFor(random(2000,1000));
+              await page.waitFor(2000);
+              let availableTweets = await page.evaluate(sel => {
+                return document.querySelector('.tweet');
+              })
+              if(availableTweets !== null) {
+                await autoScroll(page,random(300,100));
+                let tweets = await page.evaluate(extractItems, list[i].start);
+                ret.push(tweets);
+                console.log(`Fetched : [${tweets.length}] tweets => [${query} since:${list[i].start} until:${list[i].end}]`);
+              } else {
+                console.log(`No tweets for [${query} since:${list[i].start} until:${list[i].end}]. Skipping...`);
+              }
         }
       } catch(err) {
         reject(err);

@@ -6,8 +6,6 @@ function splitDateRange(startDate, endDate, chunks) {
   let start = new Date(startDate);
   let end = new Date(endDate);
   let ret = chunk(start, end, chunks);
-  // ret.map(s => console.log(`${dateformat(s.start,"yyyy/mm/dd")} ${dateformat(s.end,"yyyy/mm/dd")}`));
-  // process.exit(0);
   return ret.map(function(dateRange) {
       return {
           'start': dateformat(dateRange.start, "yyyy-mm-dd"),
@@ -22,7 +20,7 @@ function autoScroll(page,interval) {
       let totalHeight = 0;
 
       //distance per scroll
-      let distance = 1000;
+      let distance = 50;
       let timer = setInterval(function() {
           //get current height
           let scrollHeight = document.body.scrollHeight;
@@ -30,6 +28,8 @@ function autoScroll(page,interval) {
           //scroll and increment
           window.scrollBy(0, distance);
           totalHeight += distance;
+
+          let end = document.querySelector('.stream-end');
 
           //if we didnt scroll, lazy loading must be done, so return
           if (totalHeight >= scrollHeight) {
@@ -42,12 +42,17 @@ function autoScroll(page,interval) {
   },interval);
 };
 
-function extractItems() {
+function extractItems(start) {
   return [...document.querySelectorAll('.tweet')]
-    .map(el => ({
-      metadata : {...el.dataset},
-      text : el.querySelector('.js-tweet-text-container').textContent.trim()
-    }));
+    .map(el => {
+      let {tweetId,...metadata} = {...el.dataset};
+      return {
+        metadata : metadata,
+        id : tweetId,
+        text : el.querySelector('.js-tweet-text-container').textContent.trim(),
+        created_at : start
+      }
+    });
 };
 
 function random(high,low) {

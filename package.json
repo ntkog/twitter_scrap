@@ -21,6 +21,8 @@
     "chunk-date-range": "^0.1.0",
     "dateformat": "^3.0.3",
     "jsonfile": "^5.0.0",
-    "puppeteer": "^2.0.0"
+    "puppeteer": "^2.0.0",
+    "puppeteer-extra": "^3.1.7",
+    "puppeteer-extra-plugin-stealth": "^2.4.5"
   }
 }
