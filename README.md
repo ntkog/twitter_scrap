@@ -2,11 +2,20 @@
 
 This project is based on [Node-Twitter-Scrapper](https://github.com/dansalerno712/Node-Twitter-Scraper.git);
 
+# Warnings
+
+> It's a work in progress. Still not catching all the tweets comparing to my own twitter download [tweets.json], but it's getting
+closer. There is some weird cases to study. On public search yo cannot see
+
+> Try to do the searches in batches of more than days.
+
 # Enhancements
 
 - Use as much cores as you have.
 - Don't reload pages for each url
 - Get Metadata of the tweets
+
+
 
 # Prerequisites
 
