@@ -9,6 +9,17 @@ closer. There is some weird cases to study. On public search... cannot see retwe
 
 > Try to do the searches in batches of more than days.
 
+> If you have an older version of this repo, do the following:
+
+```bash
+cd twitter_scrap
+rm -rf node_modules
+npm install
+```
+
+> There is sometimes random runtime errors. I still investigating the reasons. Just try it more times.
+
+
 # Enhancements
 
 - Use as much cores as you have.
