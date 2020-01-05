@@ -38,7 +38,7 @@ npm install
 # Run
 
 ```bash
-node index.js "@NTKOG" "2018/01/01" "2019/01/01" "false"
+node index.js "@NTKOG" "2018/01/01" "2019/01/01" "false" "year"
 ```
 
 ## Arguments
@@ -49,4 +49,5 @@ In the example above:
 - **"2018/01/01"** : startDate
 - **"2019/01/01"** : endDate
 - **"false"** : Only tweets from username (when it set to **true** it gets the whole timeline)
+- **"year"** : Time slices ( "day", "week", "month", "year")
 > Once it finishes, it will store the results in **tweets_(startDate)_(endDate).json** file

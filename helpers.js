@@ -14,13 +14,11 @@ function splitDateRange(startDate, endDate, chunks) {
   });
 }
 
-function autoScroll(page,interval) {
-  return page.evaluate(function(timing) {
+function autoScroll(page,distance,interval) {
+  return page.evaluate(function(timing,distance) {
     return new Promise(function(resolve, reject) {
       let totalHeight = 0;
 
-      //distance per scroll
-      let distance = 50;
       let timer = setInterval(function() {
           //get current height
           let scrollHeight = document.body.scrollHeight;
@@ -39,7 +37,7 @@ function autoScroll(page,interval) {
           //how long to wait between scrolls
       }, timing);
     });
-  },interval);
+  },interval,distance);
 };
 
 function extractItems(start) {
