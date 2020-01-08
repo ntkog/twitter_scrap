@@ -20,6 +20,8 @@ function autoScroll(page,distance,interval) {
       let totalHeight = 0;
 
       let timer = setInterval(function() {
+          
+          
           //get current height
           let scrollHeight = document.body.scrollHeight;
 
@@ -32,7 +34,11 @@ function autoScroll(page,distance,interval) {
           //if we didnt scroll, lazy loading must be done, so return
           if (totalHeight >= scrollHeight) {
               clearInterval(timer);
-              resolve();
+              resolve({ 
+                times : Math.floor(scrollHeight / distance), 
+                scrollHeight : scrollHeight, 
+                totalHeight : totalHeight
+              });
           }
           //how long to wait between scrolls
       }, timing);
@@ -59,7 +65,7 @@ function random(high,low) {
 
 function splitJobs(list) {
   let cores = os.cpus().length;
-  cores = cores > 2 ? cores - 2 : cores;
+  //cores = cores > 2 ? cores - 2 : cores;
   console.log(`Optimize for [${cores}] cores`);
   let divider = Math.ceil(list.length / cores);
   return list.reduce((old,cur,i,arr) => {
